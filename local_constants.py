@@ -1,0 +1,2 @@
+PROJECT_NAME = 'gallery-393015'
+PROJECT_STORAGE_BUCKET = "gallery-393015.appspot.com"
