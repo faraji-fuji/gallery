@@ -30,30 +30,33 @@ def root():
             # get user entity
             user_entity = datastore_client.get(user_key)
 
-            if user_entity == None:
-                # create user
-                entity = datastore.Entity(key=user_key)
-                entity.update({
-                    'setup': 0
-                })
-                datastore_client.put(entity)
+            # if user_entity == None:
+            #     # create user
+            #     entity = datastore.Entity(key=user_key)
+            #     entity.update({
+            #         'setup': 0
+            #     })
+            #     datastore_client.put(entity)
 
-                # get created user
-                user_entity = datastore_client.get(user_key)
+            #     # get created user
+            #     user_entity = datastore_client.get(user_key)
 
-            if not user_entity['setup']:
-                url = f"/user/{user_id}/edit"
-                return redirect(url)
+            # if not user_entity['setup']:
+            #     url = f"/user/{user_id}/edit"
+            #     return redirect(url)
 
-            # session['user_entity'] = user_entity
-            session['user_id'] = claims['user_id']
-            session['username'] = user_entity['username']
+            # # session['user_entity'] = user_entity
+            # session['user_id'] = claims['user_id']
+            # session['username'] = user_entity['username']
 
         except ValueError as exc:
             error_message = str(exc)
     return render_template('index.html', user_entity=user_entity, user_id=user_id)
 
-
+# frontend
+@app.route('/user/edit/')
+def user_edit():
+    return render_template('user-edit.html')
 
 # User
 # user list
@@ -170,6 +173,33 @@ def gallery_detail(gallery_id):
         datastore_client.delete(gallery_key)
         return jsonify({'message': 'Gallery deleted successfully'})
 
+
+# Image
+# Image list
+@app.route('/api/image/', methods=['GET', 'POST'])
+def image_list():
+    if request.method == 'GET':
+        # Get all images
+        query = datastore_client.query(kind='Image')
+        images = list(query.fetch())
+        return jsonify(images)
+
+    elif request.method == 'POST':
+        # Create a new image
+        image_key = datastore_client.key('Image')
+
+        entity = datastore.Entity(key=image_key)
+        # Set properties of the image entity based on the request data
+        entity['url'] = request.json.get('url', '')
+        entity['description'] = request.json.get('description', '')
+        # Add more properties as needed
+
+        datastore_client.put(entity)
+
+        # Get created image
+        image_entity = datastore_client.get(image_key)
+        return jsonify(image_entity)
+    
 # Image detail
 @app.route('/api/image/<string:image_id>/', methods=['GET', 'PUT', 'DELETE'])
 def image_detail(image_id):
@@ -206,7 +236,7 @@ def image_detail(image_id):
 
 
 
-@app.route('/logout', methods=['GET'])
+@app.route('/logout/', methods=['GET'])
 def logout():
     session.clear()
     return redirect('/')

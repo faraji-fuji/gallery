@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gallery</title>
+
+    <!-- CSS Files -->
+    <link type="text/css" rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link type="text/css" rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <link type="text/css" rel="stylesheet" href="{{ url_for('static', filename='fontawesome/css/all.min.css') }}">
+    <link type="text/css" rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/4.4.0/firebase-ui-auth.css" />
+
+    <!-- Javascript Files -->
+    <script src="{{ url_for('static', filename='js/jquery-3.6.4.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script src="https://www.gstatic.com/firebasejs/ui/4.4.0/firebase-ui-auth.js"></script>
+
+   
+</head>
+
+<body>
+    <!-- Page Loader -->
+    <div id="loader-wrapper">
+        <div id="loader"></div>
+        <div class="loader-section section-left"></div>
+        <div class="loader-section section-right"></div>
+    </div>
+
+    <nav class="navbar navbar-expand-lg tm-bg-gray">
+        <div class="container-fluid ml-4 mr-4">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-film mr-2"></i>Gallery </a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+                aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav ml-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link nav-link-1 active" aria-current="page" href="index.html">Add Gallery</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link nav-link-2" href="">Do Something else</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link nav-link-2" href="">Login</a>
+                    </li>
+                    <li class="nav-item">
+                        <a id="sign-out" class="nav-link nav-link-2" href="/logout/">Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div id="firebase-auth-container"></div>
+    <!-- <button id="sign-out" hidden="true">Sign out</button> -->
+    
+  
+    
+    <div id="main-content" hidden="true">
+        {% block content %}
+
+        {% endblock%}
+    </div>
+
+    
+    
+
+    <footer class="tm-bg-gray pt-5 pb-3 tm-text-gray tm-footer"></footer>
+
+    <!-- Firebase scripts -->
+    <script src="https://www.gstatic.com/firebasejs/7.14.5/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.8.0/firebase-auth.js"></script>
+    <script type="module" src="{{ url_for('static', filename='js/app-setup.js') }}"></script>
+    <script src=" {{ url_for('static', filename='js/plugin.js') }}"></script>
+    <script>
+        $(window).on("load", function () {
+            $('body').addClass('loaded');
+        });
+    </script>
+    
+</body>
+
+</html>
