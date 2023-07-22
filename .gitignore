@@ -3,3 +3,4 @@ env/
 *.json
 notes.txt
 script.txt
+.vscode/
