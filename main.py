@@ -60,72 +60,149 @@ def root():
 @app.route('/api/user/', methods=['GET', 'POST'])
 def user_list():
     if request.method == 'GET':
-        # get all users
-        pass
-    elif request.method == 'POST':
-        # create a new user
-        pass
+        # Get all users
+        query = datastore_client.query(kind='User')
+        users = list(query.fetch())
+        return jsonify(users)
 
-# user detail
+    elif request.method == 'POST':
+        # Create a new user
+        user_key = datastore_client.key('User')
+
+        entity = datastore.Entity(key=user_key)
+        entity.update({
+            'setup': 0
+        })
+        datastore_client.put(entity)
+
+        # Get created user
+        user_entity = datastore_client.get(user_key)
+        return jsonify(user_entity)
+
+# User detail
 @app.route('/api/user/<string:user_id>/', methods=['GET', 'PUT', 'DELETE'])
-def user_list(user_id):
+def user_detail(user_id):
+    user_key = datastore_client.key('User', int(user_id))
+
     if request.method == 'GET':
-        # get a user
-        pass
+        # Get a user
+        user_entity = datastore_client.get(user_key)
+        return jsonify(user_entity)
+
     elif request.method == 'PUT':
-        # update a user
-        pass
+        # Update a user
+        user_entity = datastore_client.get(user_key)
+        if not user_entity:
+            return jsonify({'error': 'User not found'}), 404
+
+        # Update the user properties as needed
+        user_entity['setup'] = 1
+        datastore_client.put(user_entity)
+
+        return jsonify(user_entity)
+
     elif request.method == 'DELETE':
-        # delete a user
-        pass
+        # Delete a user
+        user_entity = datastore_client.get(user_key)
+        if not user_entity:
+            return jsonify({'error': 'User not found'}), 404
+
+        datastore_client.delete(user_key)
+        return jsonify({'message': 'User deleted successfully'})
 
 # Gallery
 # Gallery list
 @app.route('/api/gallery/', methods=['GET', 'POST'])
 def gallery_list():
     if request.method == 'GET':
-        # get all galleries
-        pass
-    elif request.method == 'POST':
-        # create a new gallery
-        pass
+        # Get all galleries
+        query = datastore_client.query(kind='Gallery')
+        galleries = list(query.fetch())
+        return jsonify(galleries)
 
-# detail
+    elif request.method == 'POST':
+        # Create a new gallery
+        gallery_key = datastore_client.key('Gallery')
+
+        entity = datastore.Entity(key=gallery_key)
+        # Set properties of the gallery entity based on the request data
+        entity['name'] = request.json.get('name', '')
+        entity['description'] = request.json.get('description', '')
+        # Add more properties as needed
+
+        datastore_client.put(entity)
+
+        # Get created gallery
+        gallery_entity = datastore_client.get(gallery_key)
+        return jsonify(gallery_entity)
+
+# Gallery detail
 @app.route('/api/gallery/<string:gallery_id>/', methods=['GET', 'PUT', 'DELETE'])
 def gallery_detail(gallery_id):
-    if request.method == 'GET':
-        # get a gallery
-        pass
-    elif request.method == 'PUT':
-        # update a gallery
-        pass
-    elif request.method == 'DELETE':
-        # delete a gallery
-        pass
+    gallery_key = datastore_client.key('Gallery', int(gallery_id))
 
-# Image
-# Image list
-@app.route('/api/image/', methods=['GET', 'POST'])
-def image_list():
     if request.method == 'GET':
-        # get all images
-        pass
-    elif request.method == 'POST':
-        # create a new image
-        pass
+        # Get a gallery
+        gallery_entity = datastore_client.get(gallery_key)
+        return jsonify(gallery_entity)
+
+    elif request.method == 'PUT':
+        # Update a gallery
+        gallery_entity = datastore_client.get(gallery_key)
+        if not gallery_entity:
+            return jsonify({'error': 'Gallery not found'}), 404
+
+        # Update the gallery properties based on the request data
+        gallery_entity['name'] = request.json.get('name', gallery_entity['name'])
+        gallery_entity['description'] = request.json.get('description', gallery_entity['description'])
+        # Update more properties as needed
+
+        datastore_client.put(gallery_entity)
+
+        return jsonify(gallery_entity)
+
+    elif request.method == 'DELETE':
+        # Delete a gallery
+        gallery_entity = datastore_client.get(gallery_key)
+        if not gallery_entity:
+            return jsonify({'error': 'Gallery not found'}), 404
+
+        datastore_client.delete(gallery_key)
+        return jsonify({'message': 'Gallery deleted successfully'})
 
 # Image detail
 @app.route('/api/image/<string:image_id>/', methods=['GET', 'PUT', 'DELETE'])
-def image_detail():
+def image_detail(image_id):
+    image_key = datastore_client.key('Image', int(image_id))
+
     if request.method == 'GET':
-        # get an image
-        pass
+        # Get an image
+        image_entity = datastore_client.get(image_key)
+        return jsonify(image_entity)
+
     elif request.method == 'PUT':
-        # update an image
-        pass
+        # Update an image
+        image_entity = datastore_client.get(image_key)
+        if not image_entity:
+            return jsonify({'error': 'Image not found'}), 404
+
+        # Update the image properties based on the request data
+        image_entity['url'] = request.json.get('url', image_entity['url'])
+        image_entity['description'] = request.json.get('description', image_entity['description'])
+        # Update more properties as needed
+
+        datastore_client.put(image_entity)
+
+        return jsonify(image_entity)
+
     elif request.method == 'DELETE':
-        # delete an image
-        pass
+        # Delete an image
+        image_entity = datastore_client.get(image_key)
+        if not image_entity:
+            return jsonify({'error': 'Image not found'}), 404
+
+        datastore_client.delete(image_key)
+        return jsonify({'message': 'Image deleted successfully'})
 
 
 
