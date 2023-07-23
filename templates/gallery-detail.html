@@ -1,28 +1,29 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<div hidden id="gallery-id">{{ data['gallery_id'] }}</div>
 <div class="container-fluid tm-container-content tm-mt-60">
 
     <div class="row mb-2">
-        <h2 id="gallery-title" class="col-12 tm-text-primary">...</h2>
+        <h2 id="gallery-title" class="col-12 tm-text-primary">{{ data['gallery']['title'] }}</h2>
+        <small>
+            <p>{{ data['gallery']['description'] }}</p>
+        </small>
     </div>
 
-    <form id="image-create-form" action="" enctype="multipart/form-data" method="POST" class="tm-contact-form mx-auto">
+    <form action="/image/add/" enctype="multipart/form-data" method="POST" class="tm-contact-form mx-auto mb-4">
 
-        <div class="row">
-            <div class="col-4">
-                <input type="file" name="file" class="form-control rounded-1" placeholder="Upload Image" required />
-            </div>
-            <div class="col-4">
-                <button type="submit" class="btn btn-danger">Cancel</button>
-            </div>
-            <div class="col-4">
-                <button type="submit" class="btn btn-primary">Add Image</button>
-            </div>            
+        <div class="input-group">
+
+            <input class="form-control" type="file" name="file_name" required>
+            <!-- <input type="file" class="form-control" id="file_name" name="file_name"> -->
+
+            <input type="text" hidden name="gallery_id" id="gallery_id" value="{{ data['gallery_id'] }}">
+            <button name="submit" class="btn btn-outline-secondary" type="submit" id="submit">Upload Images</button>
         </div>
 
     </form>
+
+
     <div class="row mb-3 tm-gallery">
         <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6 col-12 mb-5">
             <figure class="">
@@ -37,69 +38,5 @@
 
     </div>
 </div>
-
-
-<script>
-    $(document).ready(function () {
-        var gallery_id = $("#gallery-id").text();
-
-        console.log("Gallery ID:", gallery_id);
-
-        $.ajax({
-            url: `/api/gallery/${gallery_id}/`,
-            method: "GET",
-            dataType: "json",
-            success: function (data) {
-                console.log("Gallery details:", data);
-                $("#gallery-title").text(data.title);
-            },
-            error: function (xhr, status, error) {
-                // Handle errors if the request fails
-                console.error("Error fetching gallery details:", error);
-            },
-        });
-    });
-
-
-
-    $.ajax({
-        type: 'GET',
-        url: '/api/image/',
-        data: {
-            'gallery_id': gallery_id
-        },
-        dataType: 'json',
-        success: function (data) {
-            console.log(data)
-
-            let i = 0;
-            for (const item of data) {
-                console.log(item);
-
-
-                $("#galleries").append(
-
-                    `
-                    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6 col-12 mb-5">
-                        <figure class="">
-                            <img src="{{ url_for('static', filename='img/img-01.jpg' )}}" alt="Image" class="img-fluid">
-                        </figure>
-                        <div class="d-flex justify-content-between tm-text-gray">
-                            <span class="tm-text-gray-light">16 Oct 2020</span>
-                            <span>12,460 views</span>
-                        </div>
-                    </div>
-
-                    `
-                )
-                i++
-            }
-
-        },
-        error: function (xhr, status, error) {
-            console.error('Error fetching gallery data:', error);
-        }
-    });
-</script>
 
 {% endblock %}

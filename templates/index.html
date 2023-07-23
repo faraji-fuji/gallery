@@ -9,50 +9,10 @@
             My Galleries
         </h2>
     </div>
-    <div id="galleries" class="row tm-mb-90 tm-gallery"></div>
+    <div id="galleries" class="row row-cols-1 row-cols-md-4 g-8">
+
+
+
+    </div>
 </div>
-
-
-<script>
-    $.ajax({
-        type: 'GET',
-        url: '/api/gallery/',
-        dataType: 'json',
-        success: function (data) {
-            console.log(data)
-            
-            let i = 0;
-            for (const item of data) {
-                console.log(item);
-
-
-                $("#galleries").append(
-
-                    `
-                    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6 col-12 mb-5">
-                        <figure class="effect-ming tm-video-item">
-                            <img src="{{ url_for('static', filename='img/img-01.jpg' )}} " alt="Image" class="img-fluid">
-                            <figcaption class="d-flex align-items-center justify-content-center">
-                                <h2>${data[i].title}</h2>
-                                <a href="gallery/${data[i].id}/detail">View more</a>
-                            </figcaption>
-                        </figure>
-                        <div class="d-flex justify-content-between tm-text-gray">
-                            <span class="tm-text-gray-light">${data[i].created_at}</span>
-                            <span>9,906 views</span>
-                        </div>
-                    </div>
-
-                    `
-                )
-                i++
-            }
-
-        },
-        error: function (xhr, status, error) {
-            console.error('Error fetching gallery data:', error);
-        }
-    });
-</script>
-
 {% endblock %}
