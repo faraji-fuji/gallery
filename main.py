@@ -3,7 +3,7 @@ from google.cloud import datastore
 from google.cloud import storage
 from google.auth.transport import requests
 from pprint import pprint
-import datetime
+from datetime import datetime
 import google.oauth2.id_token
 
 app = Flask(__name__)
@@ -17,6 +17,7 @@ def root():
     id_token = request.cookies.get("token")
     user_entity = None
     user_id = None
+    data = {}
 
     if id_token:
         try:
@@ -30,23 +31,23 @@ def root():
             # get user entity
             user_entity = datastore_client.get(user_key)
 
-            # if user_entity == None:
-            #     # create user
-            #     entity = datastore.Entity(key=user_key)
-            #     entity.update({
-            #         'setup': 0
-            #     })
-            #     datastore_client.put(entity)
+            if user_entity == None:
+                # create user
+                entity = datastore.Entity(key=user_key)
+                entity.update({
+                    'setup': 0
+                })
+                datastore_client.put(entity)
 
-            #     # get created user
-            #     user_entity = datastore_client.get(user_key)
+                # get created user
+                user_entity = datastore_client.get(user_key)
 
-            # if not user_entity['setup']:
-            #     url = f"/user/{user_id}/edit"
-            #     return redirect(url)
+            if not user_entity['setup']:
+                url = f"/user/{user_id}/edit/"
+                return redirect(url)
 
             # # session['user_entity'] = user_entity
-            # session['user_id'] = claims['user_id']
+            session['user_id'] = claims['user_id']
             # session['username'] = user_entity['username']
 
         except ValueError as exc:
@@ -54,14 +55,29 @@ def root():
     return render_template('index.html', user_entity=user_entity, user_id=user_id)
 
 # frontend
-@app.route('/user/edit/')
-def user_edit():
-    return render_template('user-edit.html')
+# User
+@app.route('/user/<string:user_id>/edit/')
+def user_edit(user_id):
+    data={}
+    data["user_id"] = user_id
+    return render_template('user-edit.html', data=data)
+
+# Gallery
+@app.route('/gallery/create/')
+def gallery_create():
+    return render_template('gallery-create.html')
+
+@app.route('/gallery/<string:gallery_id>/detail/')
+def gallery_detail(gallery_id):
+    data = {}
+    data['gallery_id'] = gallery_id
+    return render_template('gallery-detail.html', data=data)
+
 
 # User
 # user list
 @app.route('/api/user/', methods=['GET', 'POST'])
-def user_list():
+def api_user_list():
     if request.method == 'GET':
         # Get all users
         query = datastore_client.query(kind='User')
@@ -84,8 +100,8 @@ def user_list():
 
 # User detail
 @app.route('/api/user/<string:user_id>/', methods=['GET', 'PUT', 'DELETE'])
-def user_detail(user_id):
-    user_key = datastore_client.key('User', int(user_id))
+def api_user_detail(user_id):
+    user_key = datastore_client.key('User', user_id)
 
     if request.method == 'GET':
         # Get a user
@@ -116,37 +132,57 @@ def user_detail(user_id):
 # Gallery
 # Gallery list
 @app.route('/api/gallery/', methods=['GET', 'POST'])
-def gallery_list():
+def api_gallery_list():
+    user_id = session['user_id']
+
     if request.method == 'GET':
-        # Get all galleries
-        query = datastore_client.query(kind='Gallery')
-        galleries = list(query.fetch())
-        return jsonify(galleries)
+        if user_id:
+            # Get galleries for a specific user
+            ancestor_key = datastore_client.key('User', user_id)
+            query = datastore_client.query(kind='Gallery', ancestor=ancestor_key)
+            query.order = ['-created_at']
+            galleries = list(query.fetch())
+
+        else:
+            # Get all galleries if no user_id is provided
+            query = datastore_client.query(kind='Gallery')
+            galleries = list(query.fetch())
+        
+        # Extract gallery IDs and convert galleries to a list of dictionaries
+        gallery_list = [{'id': gallery.id, 'title': gallery['title'], 'description': gallery['description']} for gallery in galleries]
+
+        return jsonify(gallery_list)
 
     elif request.method == 'POST':
         # Create a new gallery
-        gallery_key = datastore_client.key('Gallery')
-
+        gallery_key = datastore_client.key('User', user_id, 'Gallery')
         entity = datastore.Entity(key=gallery_key)
+        
         # Set properties of the gallery entity based on the request data
-        entity['name'] = request.json.get('name', '')
-        entity['description'] = request.json.get('description', '')
-        # Add more properties as needed
-
+        entity['title'] = request.form.get('title')
+        entity['description'] = request.form.get('description')
+        entity['created_at'] = datetime.now()
+        entity['updated_at'] = datetime.now()
         datastore_client.put(entity)
 
-        # Get created gallery
-        gallery_entity = datastore_client.get(gallery_key)
-        return jsonify(gallery_entity)
+        return jsonify(entity)
+
 
 # Gallery detail
 @app.route('/api/gallery/<string:gallery_id>/', methods=['GET', 'PUT', 'DELETE'])
-def gallery_detail(gallery_id):
-    gallery_key = datastore_client.key('Gallery', int(gallery_id))
+def api_gallery_detail(gallery_id):
+    user_id = session['user_id']
+
+    print(f"USER ID {user_id}")
+    gallery_key = datastore_client.key('User', user_id, 'Gallery', int(gallery_id))
+    print(f"GALLERY KEY {gallery_key}")
 
     if request.method == 'GET':
         # Get a gallery
-        gallery_entity = datastore_client.get(gallery_key)
+        gallery_entity = datastore_client.get(key=gallery_key)
+        if not gallery_entity:
+            print("NOT FOUND")
+            return jsonify({'error': 'Gallery not found'}), 404
         return jsonify(gallery_entity)
 
     elif request.method == 'PUT':
@@ -177,12 +213,18 @@ def gallery_detail(gallery_id):
 # Image
 # Image list
 @app.route('/api/image/', methods=['GET', 'POST'])
-def image_list():
+def api_image_list():
     if request.method == 'GET':
-        # Get all images
-        query = datastore_client.query(kind='Image')
-        images = list(query.fetch())
-        return jsonify(images)
+        gallery_id = request.args.get('gallery_id')
+        if gallery_id:
+            # Filter images by gallery ID
+            query = datastore_client.query(kind='Image')
+            query.add_filter('gallery_id', '=', gallery_id)
+            images = list(query.fetch())
+        else:
+            # Get all images if no 'gallery_id' is provided
+            query = datastore_client.query(kind='Image')
+            images = list(query.fetch())
 
     elif request.method == 'POST':
         # Create a new image
@@ -202,7 +244,7 @@ def image_list():
     
 # Image detail
 @app.route('/api/image/<string:image_id>/', methods=['GET', 'PUT', 'DELETE'])
-def image_detail(image_id):
+def api_image_detail(image_id):
     image_key = datastore_client.key('Image', int(image_id))
 
     if request.method == 'GET':

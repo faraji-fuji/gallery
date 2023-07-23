@@ -1,0 +1,6 @@
+indexes:
+- kind: Gallery
+  ancestor: yes
+  properties:
+  - name: created_at
+    direction: desc
