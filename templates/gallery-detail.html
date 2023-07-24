@@ -7,36 +7,42 @@
         <h2 id="gallery-title" class="col-12 tm-text-primary">{{ data['gallery']['title'] }}</h2>
         <small>
             <p>{{ data['gallery']['description'] }}</p>
+            <p>
+                <a href="/gallery/index/">galleries |</a>    
+                <a href="/gallery/index/">detect duplicates in this gallery |</a>
+                <a href="/gallery/index/">detect duplicates in all galleries </a>
+            </p>
         </small>
     </div>
 
     <form action="/image/add/" enctype="multipart/form-data" method="POST" class="tm-contact-form mx-auto mb-4">
 
         <div class="input-group">
-
-            <input class="form-control" type="file" name="file_name" required>
-            <!-- <input type="file" class="form-control" id="file_name" name="file_name"> -->
-
+            <input class="form-control" type="file" name="file_name" accept=".jpg, .jpeg, .png" required>
             <input type="text" hidden name="gallery_id" id="gallery_id" value="{{ data['gallery_id'] }}">
             <button name="submit" class="btn btn-outline-secondary" type="submit" id="submit">Upload Images</button>
         </div>
 
     </form>
 
-
     <div class="row mb-3 tm-gallery">
-        <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6 col-12 mb-5">
-            <figure class="">
-                <img src="{{ url_for('static', filename='img/img-01.jpg' )}}" alt="Image" class="img-fluid">
-            </figure>
-            <div class="d-flex justify-content-between tm-text-gray">
-                <span class="tm-text-gray-light">16 Oct 2020</span>
-                <span>12,460 views</span>
+        {% for image in data['images'] %}
+
+            <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6 col-12 mb-5">
+                <figure class="">
+                    <img src="{{ image['url'] }}" alt="Image" class="img-fluid">
+                </figure>
+                <div class="d-flex justify-content-between tm-text-gray">
+                    <span class="tm-text-gray-light">{{ image['created_at'] }}</span>
+                    <span><a href="/gallery/{{ data['gallery_id'] }}/image/{{ image['id'] }}/delete/">delete</a></span>
+                </div>
             </div>
-        </div>
 
-
+        {% endfor %}
     </div>
+
+
+
 </div>
 
 {% endblock %}

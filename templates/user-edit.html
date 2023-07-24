@@ -24,41 +24,4 @@
     </div>
 </div>
 
-
-<script>
-    $(document).ready(function() {
-      // When the form is submitted
-      $("#user-edit-form").submit(function(event) {
-        event.preventDefault(); // Prevent the default form submission behavior
-  
-        // Get form data
-        var formData = {
-          name: $("input[name='name']").val(),
-          // default_gallery: $("input[name='default-gallery']").val()
-        };
-  
-        // Perform PUT request using jQuery
-        $.ajax({
-          url: "/api/user/{{ data['user_id'] }}/",
-          type: "PUT",
-          data: formData,
-          success: function(response) {
-            // Handle success response
-            console.log("Form submitted successfully");
-            console.log(response);
-            
-            // Redirect to the index page on success
-            window.location.href = "/";
-          },
-          error: function(error) {
-            // Handle error response
-            console.error("Form submission failed");
-            console.error(error);
-          }
-        });
-      });
-    });
-  </script>
-  
-
 {% endblock %}

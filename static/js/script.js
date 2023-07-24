@@ -6,7 +6,7 @@ window.addEventListener("load", function () {
   };
 
   var uiConfig = {
-    signInSuccessUrl: "/",
+    signInSuccessUrl: "/gallery/index/",
     signInOptions: [firebase.auth.EmailAuthProvider.PROVIDER_ID],
   };
 
