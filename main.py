@@ -7,8 +7,17 @@ from pprint import pprint
 from datetime import datetime
 import google.oauth2.id_token
 import local_constants
+import hashlib
+from flask_session import Session
+from collections import defaultdict
 
 app = Flask(__name__)
+app.secret_key = 'super secret key'
+app.config['SESSION_TYPE'] = 'filesystem'
+
+app.config['SESSION_PERMANENT'] = False 
+Session(app)
+
 datastore_client = datastore.Client()
 firebase_request_adapter = requests.Request()
 storage_client = storage.Client(project=local_constants.PROJECT_NAME)
@@ -30,8 +39,7 @@ def root():
             claims = google.oauth2.id_token.verify_firebase_token(
                 id_token, firebase_request_adapter)
 
-            session['user_id'] = claims['user_id']
-            user_id = claims['user_id']
+            user_id = session['user_id'] = claims['user_id']
             user_key = datastore_client.key('User', user_id)
             user_entity = datastore_client.get(key=user_key)
             
@@ -42,42 +50,57 @@ def root():
                     'user_id': claims['user_id']
                 })
                 datastore_client.put(entity)
-                return redirect("/gallery/create/")
-            
+
+            return redirect("/gallery/index/")            
         except ValueError as exc:
             error_message = str(exc)
-    return render_template("index.html")
-
-# frontend
-# User
-@app.route('/user/<string:user_id>/edit/')
-def user_edit(user_id):
-    data={"user_id": user_id}
-    return render_template('user-edit.html', data=data)
-
+    print(f"USER ID {user_id}")
+    return render_template("index.html", data={})
 
 
 # Gallery Routes
-
 @app.route("/gallery/index/")
 def gallery_index():
     """
-    A list of all galleries for a particular user.
+    A list of all galleries for a particular user, showing the first image for each gallery.
     """
+    print("GALLERY INDEX")
     user_id = session.get('user_id')
-    ancestor_key = datastore_client.key('User', user_id)
-    query = datastore_client.query(kind='Gallery', ancestor=ancestor_key)
-    query.order = ['-created_at']
-    galleries = list(query.fetch())
+    if user_id:
+        ancestor_key = datastore_client.key('User', user_id)
+        query = datastore_client.query(kind='Gallery', ancestor=ancestor_key)
+        query.order = ['-created_at']
+        galleries = list(query.fetch())
 
-    # Extract gallery IDs and convert galleries to a list of dictionaries
-    gallery_list = [{'id': gallery.id, 'title': gallery['title'], 'description': gallery['description']} for gallery in galleries]
+        # Prepare a list to store gallery details with the first image
+        gallery_list = []
 
-    data = {
-        "galleries": gallery_list
-    }
+        for gallery in galleries:
+            gallery_id = gallery.id
 
-    return render_template("gallery-index.html", data=data)
+            # Query the first image associated with the gallery
+            query = datastore_client.query(kind='Image')
+            query.add_filter('gallery_id', '=', str(gallery_id))
+            query.order = ['created_at']
+            images = list(query.fetch(1))
+            first_image = images[0] if images else None
+
+            # Prepare data for the template
+            gallery_data = {
+                'id': gallery_id,
+                'title': gallery['title'],
+                'description': gallery['description'],
+                'first_image_url': first_image.get('url') if first_image else None
+            }
+            gallery_list.append(gallery_data)
+
+        data = {
+            "galleries": gallery_list
+        }
+
+        print(f"DATA {data}")
+        return render_template("index.html", data=data)
+    return render_template("index.html")
 
 
 @app.route('/gallery/<string:gallery_id>/detail/')
@@ -104,15 +127,6 @@ def gallery_detail(gallery_id):
     }
 
     return render_template('gallery-detail.html', data=data)
-
-
-
-@app.route('/gallery/create/')
-def gallery_create():
-    """
-    Form to create a new gallery.
-    """
-    return render_template('gallery-create.html')
 
 
 @app.route('/gallery/add/', methods=["POST"])
@@ -180,11 +194,23 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
 
+def calculate_image_hash(image):
+    """
+    Calculate the MD5 hash of the image content.
+    """
+    hasher = hashlib.md5()  # or hashlib.sha1() for SHA1 hash
+    for chunk in iter(lambda: image.read(4096), b""):
+        hasher.update(chunk)
+    return hasher.hexdigest()
+
+
 @app.route('/image/add/', methods=['POST'])
 def image_add():
     """
-    Add a new image.
+    Add a new image and check for duplicates.
     """
+    user_id = session.get('user_id')
+
     if 'file_name' not in request.files:
         flash('No file part')
         return redirect(request.url)
@@ -199,20 +225,34 @@ def image_add():
         filename = secure_filename(file.filename)
         gallery_id = request.form.get('gallery_id')
 
+        # Calculate the hash of the new image
+        new_image_hash = calculate_image_hash(file)
+
+        # Check for duplicates using the hash in Datastore
+        query = datastore_client.query(kind='Image')
+        query.add_filter('gallery_id', '=', gallery_id)
+        query.add_filter('image_hash', '=', new_image_hash)
+        duplicate_images = list(query.fetch())
+
+        if duplicate_images:
+            flash('Upload failed. Duplicate image detected.')
+            return redirect(f'/gallery/{gallery_id}/detail/')
+
+        file.seek(0)
+
         blob = bucket.blob(filename)
         blob.upload_from_file(file)
         blob.make_public()
         image_url = blob.public_url
 
-        image_key = datastore_client.key('Image')
+        image_key = datastore_client.key('User', user_id, 'Image')
         entity = datastore.Entity(key=image_key)
         entity['url'] = image_url
         entity['gallery_id'] = gallery_id
+        entity['image_hash'] = new_image_hash
         entity['created_at'] = datetime.now()
         entity['updated_at'] = datetime.now()
         datastore_client.put(entity)
-
-        flash('File uploaded successfully')
 
         return redirect(f'/gallery/{gallery_id}/detail/')
 
@@ -226,11 +266,40 @@ def delete_image(gallery_id, image_id):
     Delete an image.
     """
     user_id = session.get('user_id')
-    image_key = datastore_client.key('Image', int(image_id))  
+    image_key = datastore_client.key('User', user_id, 'Image', int(image_id))  
     image_entity = datastore_client.get(key=image_key)
     datastore_client.delete(image_key)
     return redirect(f"/gallery/{gallery_id}/detail/")
    
+
+
+@app.route('/image/duplicates/')
+def image_duplicates():
+    """
+    View all duplicate images across galleries.
+    """
+    user_id = session.get('user_id')
+    ancestor_key = datastore_client.key('User', user_id)
+    query = datastore_client.query(kind='Image', ancestor=ancestor_key)
+    images = list(query.fetch())
+
+    # Group images by their image_hash
+    image_hash_groups = defaultdict(list)
+    for image in images:
+        image_hash_groups[image['image_hash']].append(image)
+
+    # Filter out non-duplicate image groups
+    duplicate_image_groups = {hash_key: image_group for hash_key, image_group in image_hash_groups.items() if len(image_group) > 1}
+
+    # Prepare data for the template
+    data = {
+        "duplicate_image_groups": duplicate_image_groups
+    }
+
+    print(f"Duplicate Image Groups: {duplicate_image_groups}")
+
+    return render_template('image-duplicates.html', data=data)
+
 
 @app.route('/logout/', methods=['GET'])
 def logout():

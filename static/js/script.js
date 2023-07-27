@@ -3,10 +3,14 @@ window.addEventListener("load", function () {
   document.getElementById("sign-out").onclick = function () {
     // ask firebase to sign out the user
     firebase.auth().signOut();
+
+    user.getIdToken().then(function (token) {
+      document.cookie = "token=";
+    });
   };
 
   var uiConfig = {
-    signInSuccessUrl: "/gallery/index/",
+    signInSuccessUrl: "/",
     signInOptions: [firebase.auth.EmailAuthProvider.PROVIDER_ID],
   };
 
@@ -16,7 +20,7 @@ window.addEventListener("load", function () {
         document.getElementById("sign-out").hidden = false;
         document.getElementById("main-content").hidden = false;
         // document.getElementById("main-content").hidden = false;
-        console.log("Signed in as ${user.displayName} (${user.email})");
+        console.log(`Signed in as ${user.displayName} (${user.email})`);
         user.getIdToken().then(function (token) {
           document.cookie = "token=" + token;
         });
@@ -25,8 +29,6 @@ window.addEventListener("load", function () {
         ui.start("#firebase-auth-container", uiConfig);
         document.getElementById("sign-out").hidden = true;
         document.getElementById("main-content").hidden = true;
-        document.getElementById("main-content").hidden = true;
-
         document.cookie = "token=";
       }
     },

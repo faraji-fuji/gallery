@@ -1,0 +1,18 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+    {% for hash_key, image_group in data.duplicate_image_groups.items() %}
+    <h3>Image Hash: {{ hash_key }}</h3>
+    <ul>
+        {% for image in image_group %}
+            <li>
+                <img src="{{ image.url }}" alt="Image">
+                <p>Gallery ID: {{ image.gallery_id }}</p>
+                <p>Uploaded at: {{ image.created_at }}</p>
+            </li>
+        {% endfor %}
+    </ul>
+    {% endfor %}
+
+{% endblock %}

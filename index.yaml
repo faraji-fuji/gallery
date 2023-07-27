@@ -4,3 +4,8 @@ indexes:
   properties:
   - name: created_at
     direction: desc
+
+- kind: Image
+  properties:
+  - name: gallery_id
+  - name: created_at
