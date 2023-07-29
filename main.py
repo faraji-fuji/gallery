@@ -36,10 +36,6 @@ def root():
             claims = google.oauth2.id_token.verify_firebase_token(
                 id_token, firebase_request_adapter)
 
-            print(f"ID TOKEN: {id_token}")
-            print("ROOT")
-            pprint(claims)
-
             # get user id, key and entity
             user_id = claims['user_id']
             user_key = datastore_client.key('User', user_id)
@@ -55,9 +51,7 @@ def root():
                 datastore_client.put(entity)
 
             # prepare data
-            data = {
-                "user_id":user_id,
-            }
+            data = {"user_id":user_id}
 
             # get galleries of a user
             ancestor_key = datastore_client.key('User', user_id)
@@ -89,83 +83,16 @@ def root():
 
             data = {"galleries": gallery_list}
 
-            print(f"GALLERY INDEX DATA {data}")
             return render_template("index.html", data=data)
 
         except ValueError as exc:
             error_message = str(exc)
             print(f"AN ERROR OCCURED {error_message}")
             data = {"error_message":error_message}
+            flash(error_message)
 
     return render_template("index.html", data=data)
 
-
-
-# Gallery Routes
-# @app.route("/gallery/index/")
-# def gallery_index():
-#     """
-#     A list of all galleries for a particular user, showing the first image for each gallery.
-#     """
-
-#     id_token = request.cookies.get("token")
-#     user_id = None
-#     data={}
-
-
-#     if id_token:
-#         try:
-#             # verify token
-#             claims = google.oauth2.id_token.verify_firebase_token(
-#                 id_token, firebase_request_adapter)
-
-#             print(f"ID TOKEN: {id_token}")
-#             print("ROOT")
-#             pprint(claims)
-
-#             # get user id, key and entity
-#             user_id = claims['user_id']
-
-#             # get galleries of a user
-#             ancestor_key = datastore_client.key('User', user_id)
-#             query = datastore_client.query(kind='Gallery', ancestor=ancestor_key)
-#             query.order = ['-created_at']
-#             galleries = list(query.fetch())
-
-#             # Prepare a list to store gallery details with the first image
-#             gallery_list = []
-
-#             for gallery in galleries:
-#                 gallery_id = gallery.id
-
-#                 # Query the first image associated with the gallery
-#                 query = datastore_client.query(kind='Image')
-#                 query.add_filter('gallery_id', '=', str(gallery_id))
-#                 query.order = ['created_at']
-#                 images = list(query.fetch(1))
-#                 first_image = images[0] if images else None
-
-#                 # Prepare data for the template
-#                 gallery_data = {
-#                     'id': gallery_id,
-#                     'title': gallery['title'],
-#                     'description': gallery['description'],
-#                     'first_image_url': first_image.get('url') if first_image else None
-#                 }
-#                 gallery_list.append(gallery_data)
-
-#             data = {"galleries": gallery_list}
-
-#             print(f"GALLERY INDEX DATA {data}")
-#             return render_template("index.html", data=data)
-
-#         except ValueError as exc:
-#             error_message = str(exc)
-#             print(f"AN ERROR OCCURED {error_message}")
-#             data={"error_message":error_message}
-
-#     return render_template("index.html", data=data)
-    
 
 @app.route('/gallery/<string:gallery_id>/detail/')
 def gallery_detail(gallery_id):
@@ -180,10 +107,8 @@ def gallery_detail(gallery_id):
         claims = google.oauth2.id_token.verify_firebase_token(
             id_token, firebase_request_adapter)
 
-        # get user id, key and entity
+        # get user id, gallery key and gallery entity
         user_id = claims['user_id']
-
-        # logic
         gallery_key = datastore_client.key('User', user_id, 'Gallery', int(gallery_id))
         gallery_entity = datastore_client.get(key=gallery_key)
 
@@ -192,9 +117,6 @@ def gallery_detail(gallery_id):
         query.add_filter('gallery_id', '=', gallery_id)
         images = list(query.fetch())
 
-        print(f"GALLERY ID {gallery_id}")
-        print(f"IMAGES {images}")
-        
         data = {
             "gallery": dict(gallery_entity),
             "gallery_id": gallery_id,
@@ -207,6 +129,7 @@ def gallery_detail(gallery_id):
         error_message = str(exc)
         print(f"AN ERROR OCCURED {error_message}")
         data={"error_message":error_message}
+        flash(error_message)
     
     return render_template("index.html", data={})
     
@@ -224,10 +147,8 @@ def gallery_add():
         claims = google.oauth2.id_token.verify_firebase_token(
             id_token, firebase_request_adapter)
 
-        # get user id, key and entity
+        # get user id, gallery key and gallery entity
         user_id = claims['user_id']
-
-        # logic
         gallery_key = datastore_client.key('User', user_id, 'Gallery')
         entity = datastore.Entity(key=gallery_key)
         
@@ -244,6 +165,7 @@ def gallery_add():
         error_message = str(exc)
         data = {"error_message":error_message}
         print(f"AN ERROR OCCURED {error_message}")
+        flash(error_message)
 
     return render_template("index.html", data=data)
     
@@ -277,6 +199,8 @@ def gallery_edit(gallery_id):
         error_message = str(exc)
         print(f"AN ERROR OCCURED {error_message}")
         data={"error_message":error_message}
+        flash(error_message)
+
     
     return render_template("index.html", data=data)
 
@@ -311,6 +235,7 @@ def gallery_update(gallery_id):
         error_message = str(exc)
         print(f"AN ERROR OCCURED {error_message}")
         data={"error_message":error_message}
+        flash(error_message)
 
     return render_template("index.html", data=data)
 
@@ -341,7 +266,8 @@ def delete_gallery(gallery_id):
         error_message = str(exc)
         print(f"AN ERROR OCCURED {error_message}")
         data={"error_message":error_message}
-        
+        flash(error_message)
+
     return render_template("index.html", data=data)
 
 
@@ -424,7 +350,8 @@ def image_add():
         error_message = str(exc)
         print(f"AN ERROR OCCURED {error_message}")
         data={"error_message":error_message}
-        
+        flash(error_message)
+
     return render_template("index.html", data=data)
 
 
@@ -455,6 +382,7 @@ def delete_image(gallery_id, image_id):
         error_message = str(exc)
         print(f"AN ERROR OCCURED {error_message}")
         data={"error_message":error_message}
+        flash(error_message)
 
     return render_template("index.html", data=data)
 
@@ -490,11 +418,10 @@ def image_duplicates():
         duplicate_image_groups = {hash_key: image_group for hash_key, image_group in image_hash_groups.items() if len(image_group) > 1}
 
         # Prepare data for the template
-        data = {
-            "duplicate_image_groups": duplicate_image_groups
-        }
+        data = {"duplicate_image_groups": duplicate_image_groups}
 
         print(f"Duplicate Image Groups: {duplicate_image_groups}")
+        flash("Duplicate images from all your galleries.")
 
         return render_template('image-duplicates.html', data=data)
 

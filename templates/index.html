@@ -53,7 +53,9 @@
                     <strong>Gallery</strong>
                 </a>
 
-                <a id="sign-out" href="/logout/" class="btn btn-secondary my-2">logout</a>
+                <!-- <a id="sign-out" href="#" class="btn btn-secondary my-2">logout</a> -->
+
+                <button id="sign-out" class="btn btn-secondary my-2">logout</button>
 
             </div>
         </div>
@@ -61,6 +63,14 @@
     <div id="firebase-auth-container"></div>
 
     <main id="main-content">
+        
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+            <div class="alert alert-danger" role="alert">
+                {{ messages[0] }}
+            </div>
+            {% endif %}
+        {% endwith %}
 
         <section class="py-5 text-center container">
             <div class="row py-lg-5">

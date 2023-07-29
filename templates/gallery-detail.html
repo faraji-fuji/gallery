@@ -12,7 +12,6 @@
     <link type="text/css" rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/4.4.0/firebase-ui-auth.css" />
  
     <!-- Javascript Files -->
-    <script src="{{ url_for('static', filename='js/jquery-3.6.4.js') }}"></script>
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
     <script src="https://www.gstatic.com/firebasejs/ui/4.4.0/firebase-ui-auth.js"></script>
 
@@ -54,7 +53,9 @@
                     <strong>Gallery</strong>
                 </a>
                 
-                <a id="sign-out" href="/logout/" class="btn btn-secondary my-2">logout</a>
+
+                <button id="sign-out" class="btn btn-secondary my-2">logout</button>
+
 
             </div>
         </div>
@@ -62,17 +63,16 @@
 
     <main>
 
+
         {% with messages = get_flashed_messages() %}
             {% if messages %}
-                <ul class="flash-messages">
-                {% for message in messages %}
-                <div class="alert alert-danger" role="alert">
-                    {{ message }}
-                </div>
-                {% endfor %}
-                </ul>
+            <div class="alert alert-danger" role="alert">
+                {{ messages[0] }}
+            </div>
             {% endif %}
         {% endwith %}
+        
+
 
         <section class="py-5 text-center container">
             <div class="row py-lg-5">
@@ -87,9 +87,9 @@
                             Add Image
                         </button>
 
-                        <a href="/gallery/index/" class="btn btn-sm btn-outline-secondary my-2">Back to galleries</a>
+                        <a href="/" class="btn btn-sm btn-outline-secondary my-2">Back to galleries</a>
                         <a href="/image/duplicates/" class="btn btn-sm btn-outline-secondary my-2">Detect duplicates in all galeries</a>
-                        <a href="/gallery/index/" class="btn btn-sm btn-outline-secondary my-2">share</a>
+                        <a href="/" class="btn btn-sm btn-outline-secondary my-2">share</a>
                     </p>
 
                     
